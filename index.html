@@ -398,15 +398,75 @@
 
     .hidden-egg {
       position: fixed;
-      right: 14px;
-      top: max(14px, env(safe-area-inset-top));
-      width: 38px;
-      height: 38px;
+      right: 8px;
+      top: max(10px, env(safe-area-inset-top));
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
       background: transparent;
-      color: rgba(255,255,255,.28);
-      font-size: 20px;
-      z-index: 20;
+      color: rgba(255,255,255,.42);
+      font-size: 22px;
+      z-index: 80;
+      touch-action: manipulation;
+    }
+
+    .hidden-egg.pulse {
+      animation: eggPulse .28s ease;
+    }
+
+    @keyframes eggPulse {
+      50% { transform: scale(1.35) rotate(20deg); color: #fff3b0; }
+    }
+
+    .egg-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: none;
+      place-items: center;
+      padding: 26px;
+      background: rgba(4,5,10,.76);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .egg-modal.show { display: grid; animation: fade .45s ease both; }
+
+    .egg-card {
+      width: min(100%, 350px);
+      padding: 28px 23px 24px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 24px;
+      background: linear-gradient(145deg, rgba(34,34,49,.96), rgba(15,16,25,.96));
+      box-shadow: 0 28px 80px rgba(0,0,0,.5);
+      text-align: center;
+    }
+
+    .egg-symbol {
+      font-size: 34px;
+      color: #fff3b0;
+      filter: drop-shadow(0 0 14px rgba(255,243,176,.65));
+      margin-bottom: 14px;
+    }
+
+    .egg-card h3 {
+      margin: 0 0 14px;
+      font-size: 23px;
+    }
+
+    .egg-card p {
+      margin: 0;
+      color: rgba(255,255,255,.82);
+    }
+
+    .egg-close {
+      width: 100%;
+      min-height: 46px;
+      margin-top: 22px;
+      border-radius: 999px;
+      background: #fff;
+      color: #11131a;
+      font-weight: 700;
     }
 
 
@@ -503,8 +563,16 @@
   </style>
 </head>
 <body>
-  <button class="hidden-egg" id="egg">✦</button>
+  <button class="hidden-egg" id="egg" aria-label="隐藏彩蛋">✦</button>
   <div class="toast" id="toast"></div>
+  <div class="egg-modal" id="eggModal" role="dialog" aria-modal="true" aria-labelledby="eggTitle">
+    <div class="egg-card">
+      <div class="egg-symbol">✦</div>
+      <h3 id="eggTitle">隐藏坐标已解锁</h3>
+      <p>宇宙曾重启过一次。<br>可能只是为了把你加载进来。</p>
+      <button class="egg-close" id="eggClose">收下这颗星</button>
+    </div>
+  </div>
 
   <main>
     <section class="screen active" id="s0">
@@ -810,16 +878,31 @@
       $("secret").classList.toggle("show");
     });
 
-    // 隐藏彩蛋：右上角星星连续点击5次
+    // 隐藏彩蛋：右上角星星连续点击5次，在屏幕中央弹出
     let eggClicks = [];
     $("egg").addEventListener("click", () => {
       const now = Date.now();
-      eggClicks = eggClicks.filter(t => now - t < 3000);
+      eggClicks = eggClicks.filter(t => now - t < 5000);
       eggClicks.push(now);
 
+      $("egg").classList.remove("pulse");
+      void $("egg").offsetWidth;
+      $("egg").classList.add("pulse");
+
       if (eggClicks.length >= 5) {
-        toast("宇宙曾重启过一次，可能只是为了把你加载进来。");
+        $("eggModal").classList.add("show");
+        if (navigator.vibrate) navigator.vibrate([50, 40, 80]);
         eggClicks = [];
+      }
+    });
+
+    $("eggClose").addEventListener("click", () => {
+      $("eggModal").classList.remove("show");
+    });
+
+    $("eggModal").addEventListener("click", (event) => {
+      if (event.target === $("eggModal")) {
+        $("eggModal").classList.remove("show");
       }
     });
 
