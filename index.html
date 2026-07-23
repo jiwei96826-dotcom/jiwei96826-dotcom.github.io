@@ -77,6 +77,10 @@
     .letter{display:none;margin-top:18px;padding:22px 20px;border-radius:10px;background:linear-gradient(145deg,#eee1c5,#cdb88b);color:#2c2419;text-align:left;line-height:1.82;box-shadow:0 18px 55px rgba(0,0,0,.45);animation:reveal .7s ease}.letter.show{display:block}.letter p{color:#2c2419}.seal-mark{text-align:center;font-size:34px;color:#7a1e26;margin-bottom:8px}
     .star-btn{width:64px;height:64px;border-radius:50%;background:rgba(233,197,116,.08);color:var(--gold-light);font-size:30px;border:1px solid rgba(233,197,116,.35);filter:drop-shadow(0 0 12px rgba(233,197,116,.5));animation:glow 2s ease-in-out infinite alternate}@keyframes glow{to{box-shadow:0 0 28px rgba(233,197,116,.32);transform:scale(1.05)}}
     .claim{display:none}.claim.show{display:block}
+    .utility-controls{position:fixed;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));z-index:90;display:flex;gap:8px;align-items:center}
+    .utility-btn{min-height:42px;padding:0 13px;border-radius:999px;border:1px solid rgba(233,197,116,.34);background:rgba(7,11,22,.74);color:rgba(255,244,202,.92);box-shadow:0 8px 28px rgba(0,0,0,.24);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:13px;font-weight:650;letter-spacing:.02em;touch-action:manipulation}
+    .utility-btn:active{transform:scale(.96)}.utility-btn[aria-pressed="false"]{color:rgba(255,255,255,.66);border-color:rgba(255,255,255,.2)}
+    .sound-icon{display:inline-block;min-width:17px;margin-right:3px;color:var(--gold-light)}
     .hidden-egg{position:fixed;right:8px;top:max(8px,env(safe-area-inset-top));z-index:80;width:60px;height:60px;border-radius:50%;background:transparent;color:rgba(255,235,177,.62);font-size:23px;touch-action:manipulation}.hidden-egg.pulse{animation:pulse .28s ease}@keyframes pulse{50%{transform:scale(1.35) rotate(24deg);color:#fff2bb}}
     .modal{position:fixed;inset:0;z-index:120;display:none;place-items:center;padding:24px;background:rgba(2,4,10,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);overflow:auto}.modal.show{display:grid;animation:reveal .4s ease}.modal-card{width:min(100%,370px);padding:27px 22px;border:1px solid rgba(233,197,116,.46);border-radius:24px;background:linear-gradient(145deg,rgba(23,30,49,.98),rgba(7,10,20,.98));box-shadow:0 30px 90px rgba(0,0,0,.55);text-align:center}.modal-card h3{font-family:"Songti SC",Georgia,serif;font-size:25px;color:var(--gold-light);margin:0 0 13px}.modal-card p{margin:0}.modal-close{width:100%;min-height:47px;margin-top:20px;border-radius:999px;background:linear-gradient(#fff4ca,#d4aa55);color:#21190d;font-weight:750}
     .permit{border:1px solid #b28a3e;background:linear-gradient(145deg,#f3e6c3,#d4bd87);color:#302415;padding:23px 18px;border-radius:9px;box-shadow:inset 0 0 0 5px rgba(117,80,27,.08)}.permit h3{color:#503b1e}.permit p{color:#3a2a18}.permit-stamp{width:86px;height:86px;border:3px double #8b2730;border-radius:50%;display:grid;place-items:center;margin:18px auto 5px;color:#8b2730;font-family:"STKaiti",serif;font-weight:700;transform:rotate(-9deg)}
@@ -88,6 +92,10 @@
 <body>
   <div class="magic-bg"></div><div class="vignette"></div><div class="mist"></div>
   <div class="candles" aria-hidden="true"><i class="candle c1"></i><i class="candle c2"></i><i class="candle c3"></i><i class="candle c4"></i><i class="candle c5"></i><i class="candle c6"></i></div>
+  <div class="utility-controls">
+    <button class="utility-btn" id="restartButton" type="button" aria-label="重新开始生日贺卡">↺ 重新开始</button>
+    <button class="utility-btn" id="soundToggle" type="button" aria-pressed="true" aria-label="关闭声音"><span class="sound-icon" id="soundIcon">♪</span><span id="soundLabel">声音开</span></button>
+  </div>
   <button class="hidden-egg" id="corridorEgg" aria-label="隐藏走廊彩蛋">✦</button>
   <div class="toast" id="toast"></div>
 
@@ -140,28 +148,169 @@
 
   <script>
     const PROFILE={birthDate:"1996-07-23",meetingDate:"2014-09-01",targetDate:"2026-07-23"};
-    const $=id=>document.getElementById(id);const screens=[...document.querySelectorAll('.screen')];
-    function showScreen(id){screens.forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
-    function toast(message){const t=$('toast');t.textContent=message;t.classList.add('show');clearTimeout(window.__tt);window.__tt=setTimeout(()=>t.classList.remove('show'),2400)}
-    function diffDays(a,b){a=new Date(a);b=new Date(b);return Math.max(0,Math.floor((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/86400000))}
-    const daysAlive=diffDays(PROFILE.birthDate,PROFILE.targetDate),sharedDays=diffDays(PROFILE.meetingDate,PROFILE.targetDate);$('sharedDays').textContent=sharedDays.toLocaleString('zh-CN');
-    $('coverCard').addEventListener('click',()=>showScreen('s1'));
-    $('startTime').addEventListener('click',()=>{showScreen('s2');const start=performance.now();function run(now){const p=Math.min(1,(now-start)/4300),e=1-Math.pow(1-p,3),year=Math.round(1996+(2026-1996)*e);$('yearCounter').textContent=year;if(year<2008)$('timelineText').textContent='那时你还不知道，长大是一场不能提前阅读的魔法。';else if(year<2014)$('timelineText').textContent='你开始拥有自己的秘密、选择，以及一些暂时没有答案的问题。';else if(year<2018)$('timelineText').textContent='2014年9月1日，两条原本不同的路线开始相遇。';else $('timelineText').textContent='时间列车即将抵达：第三十站。';if(p<1)requestAnimationFrame(run);else $('arriveNow').style.display='block'}requestAnimationFrame(run)});
-    $('arriveNow').addEventListener('click',()=>{showScreen('s3');let shown=0;const step=Math.ceil(daysAlive/90),timer=setInterval(()=>{shown=Math.min(daysAlive,shown+step);$('daysAlive').textContent=shown.toLocaleString('zh-CN');if(shown===daysAlive)clearInterval(timer)},18)});
-    $('writeWish').addEventListener('click',()=>showScreen('s4'));
-    function goCake(){sessionStorage.setItem('sealedWish',$('wish').value.trim()||'[空白羊皮纸]');showScreen('s5')}
-    $('sealWish').addEventListener('click',()=>{if(!$('wish').value.trim()){toast('也可以选择一张空白羊皮纸。');return}toast('愿望已经封印，任何人都无法查看。');setTimeout(goCake,850)});$('skipWish').addEventListener('click',()=>{toast('已替你保留一张空白羊皮纸。');setTimeout(goCake,700)});
-    const hold=$('holdBlow');let holdStart=0,raf=null,blown=false;
-    function beginHold(e){if(blown)return;e.preventDefault();holdStart=performance.now();function tick(now){const p=Math.min(1,(now-holdStart)/1600);hold.style.setProperty('--progress',`${p*100}%`);$('flame').style.transform=`translateX(-50%) rotate(${p*20}deg) scale(${1-p*.18})`;if(p>=1){blowOut();return}raf=requestAnimationFrame(tick)}raf=requestAnimationFrame(tick)}
-    function endHold(){if(blown)return;cancelAnimationFrame(raf);hold.style.setProperty('--progress','0%');$('flame').style.transform='';if(holdStart&&performance.now()-holdStart<1400)toast('再长按一会儿，魔法风还没有聚集完成。');holdStart=0}
-    function blowOut(){blown=true;cancelAnimationFrame(raf);$('flame').classList.add('out');hold.style.setProperty('--progress','100%');$('blowHint').textContent='愿望已经离开这里，正在前往一个暂时无法确认的地方。';if(navigator.vibrate)navigator.vibrate(80);setTimeout(()=>{sessionStorage.removeItem('sealedWish');showScreen('s6')},1900)}
-    hold.addEventListener('pointerdown',beginHold);['pointerup','pointercancel','pointerleave'].forEach(ev=>hold.addEventListener(ev,endHold));
-    let cakeClicks=0;$('cake').addEventListener('click',()=>{cakeClicks++;if(cakeClicks===5){toast('魔法厨房警告：再点下去，蛋糕将提前消失。');$('cake').animate([{transform:'scale(1)'},{transform:'scale(.9)'},{transform:'scale(1)'}],{duration:520});cakeClicks=0}});
-    $('starSecret').addEventListener('click',()=>{$('letter').classList.add('show');$('claim').classList.add('show');$('starSecret').textContent='✉';if(navigator.vibrate)navigator.vibrate(45)});
-    $('claimCard').addEventListener('click',()=>$('cardModal').classList.add('show'));
-    document.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',()=>$(btn.dataset.close).classList.remove('show')));document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
-    let corridor=[];$('corridorEgg').addEventListener('click',()=>{const now=Date.now();corridor=corridor.filter(t=>now-t<5000);corridor.push(now);$('corridorEgg').classList.remove('pulse');void $('corridorEgg').offsetWidth;$('corridorEgg').classList.add('pulse');if(corridor.length>=5){$('corridorModal').classList.add('show');corridor=[];if(navigator.vibrate)navigator.vibrate([45,35,70])}});
-    let ageClicks=0,ageTimer=null;function ageTap(){ageClicks++;clearTimeout(ageTimer);ageTimer=setTimeout(()=>ageClicks=0,1800);if(ageClicks>=3){$('permitModal').classList.add('show');ageClicks=0;if(navigator.vibrate)navigator.vibrate([35,25,60])}}$('ageEgg').addEventListener('click',ageTap);$('finalAgeEgg').addEventListener('click',ageTap);
+    const $=id=>document.getElementById(id);
+    const screens=[...document.querySelectorAll('.screen')];
+    const hold=$('holdBlow');
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    let audioContext=null,audioMaster=null,soundEnabled=true;
+    let timelineRaf=null,daysTimer=null,transitionTimer=null,toastTimer=null;
+    let holdStart=0,raf=null,blown=false,cakeClicks=0,corridor=[],ageClicks=0,ageTimer=null;
+
+    try{
+      const savedSound=localStorage.getItem('birthdayMagicSound');
+      if(savedSound!==null)soundEnabled=savedSound==='on';
+    }catch(error){}
+
+    function updateSoundButton(){
+      const supported=Boolean(AudioContextClass);
+      $('soundToggle').disabled=!supported;
+      $('soundToggle').setAttribute('aria-pressed',String(soundEnabled&&supported));
+      $('soundToggle').setAttribute('aria-label',supported?(soundEnabled?'关闭声音':'开启声音'):'此浏览器不支持声音');
+      $('soundIcon').textContent=supported?(soundEnabled?'♪':'×'):'—';
+      $('soundLabel').textContent=supported?(soundEnabled?'声音开':'声音关'):'无声音';
+    }
+
+    function ensureAudio(){
+      if(!soundEnabled||!AudioContextClass)return null;
+      if(!audioContext){
+        audioContext=new AudioContextClass();
+        audioMaster=audioContext.createGain();
+        audioMaster.gain.value=.22;
+        audioMaster.connect(audioContext.destination);
+      }
+      if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
+      return audioContext;
+    }
+
+    function tone(frequency,delay,duration,volume=.08,type='sine',endFrequency=null){
+      const context=ensureAudio();if(!context)return;
+      const start=context.currentTime+delay,oscillator=context.createOscillator(),gain=context.createGain();
+      oscillator.type=type;oscillator.frequency.setValueAtTime(frequency,start);
+      if(endFrequency)oscillator.frequency.exponentialRampToValueAtTime(endFrequency,start+duration);
+      gain.gain.setValueAtTime(.0001,start);
+      gain.gain.exponentialRampToValueAtTime(volume,start+.025);
+      gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+      oscillator.connect(gain);gain.connect(audioMaster);oscillator.start(start);oscillator.stop(start+duration+.03);
+    }
+
+    function noise(delay,duration,volume=.1,filterType='bandpass',frequency=900){
+      const context=ensureAudio();if(!context)return;
+      const start=context.currentTime+delay,length=Math.max(1,Math.floor(context.sampleRate*duration));
+      const buffer=context.createBuffer(1,length,context.sampleRate),data=buffer.getChannelData(0);
+      for(let i=0;i<length;i++)data[i]=(Math.random()*2-1)*(1-i/length*.25);
+      const source=context.createBufferSource(),filter=context.createBiquadFilter(),gain=context.createGain();
+      source.buffer=buffer;filter.type=filterType;filter.frequency.setValueAtTime(frequency,start);
+      filter.frequency.exponentialRampToValueAtTime(Math.max(120,frequency*.48),start+duration);
+      gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(volume,start+.04);gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+      source.connect(filter);filter.connect(gain);gain.connect(audioMaster);source.start(start);source.stop(start+duration+.03);
+    }
+
+    function playPageTurn(){noise(0,.42,.11,'highpass',1450);tone(392,.08,.28,.045,'sine',523.25);tone(659.25,.2,.42,.04,'sine',783.99)}
+    function playMagicHint(){[659.25,830.61,987.77].forEach((note,index)=>tone(note,index*.075,.38,.055,'sine'));tone(1318.51,.24,.58,.035,'sine')}
+    function playBlow(){noise(0,1.05,.18,'bandpass',1500);tone(293.66,.62,.62,.045,'triangle',196)}
+    function playCardReward(){[523.25,659.25,783.99,1046.5].forEach((note,index)=>tone(note,index*.12,.62,.06,index===3?'triangle':'sine'));tone(1567.98,.48,.9,.035,'sine')}
+
+    function setSoundEnabled(value,announce=true){
+      soundEnabled=Boolean(value);
+      try{localStorage.setItem('birthdayMagicSound',soundEnabled?'on':'off')}catch(error){}
+      updateSoundButton();
+      if(audioContext&&audioMaster){
+        const now=audioContext.currentTime;audioMaster.gain.cancelScheduledValues(now);
+        audioMaster.gain.setTargetAtTime(soundEnabled ? .22 : 0,now,.025);
+      }
+      if(soundEnabled){ensureAudio();playMagicHint()}
+      if(announce)toast(soundEnabled?'声音已开启':'声音已关闭');
+    }
+
+    function showScreen(id,smooth=true){
+      screens.forEach(screen=>screen.classList.remove('active'));$(id).classList.add('active');
+      window.scrollTo({top:0,behavior:smooth?'smooth':'auto'});
+    }
+
+    function toast(message){
+      const item=$('toast');item.textContent=message;item.classList.add('show');clearTimeout(toastTimer);
+      toastTimer=setTimeout(()=>item.classList.remove('show'),2400);
+    }
+
+    function diffDays(a,b){
+      a=new Date(a);b=new Date(b);
+      return Math.max(0,Math.floor((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/86400000));
+    }
+
+    function restartApp(announce=true){
+      cancelAnimationFrame(timelineRaf);cancelAnimationFrame(raf);clearInterval(daysTimer);clearTimeout(transitionTimer);clearTimeout(ageTimer);clearTimeout(toastTimer);
+      timelineRaf=raf=daysTimer=transitionTimer=ageTimer=toastTimer=null;holdStart=0;blown=false;cakeClicks=0;corridor=[];ageClicks=0;
+      try{sessionStorage.removeItem('sealedWish')}catch(error){}
+      $('wish').value='';$('yearCounter').textContent='1996';$('timelineText').textContent='那时你还不知道，长大是一场不能提前阅读的魔法。';$('arriveNow').style.display='none';
+      $('daysAlive').textContent='0';$('flame').classList.remove('out');$('flame').style.transform='';hold.style.setProperty('--progress','0%');$('blowHint').textContent='闭上眼睛，想一件值得发生的事。';
+      $('letter').classList.remove('show');$('claim').classList.remove('show');$('starSecret').textContent='✦';document.querySelectorAll('.modal').forEach(modal=>modal.classList.remove('show'));$('toast').classList.remove('show');
+      showScreen('s0',false);if(announce)toast('时间档案已回到第一页。');
+    }
+
+    const daysAlive=diffDays(PROFILE.birthDate,PROFILE.targetDate),sharedDays=diffDays(PROFILE.meetingDate,PROFILE.targetDate);
+    $('sharedDays').textContent=sharedDays.toLocaleString('zh-CN');updateSoundButton();
+
+    $('soundToggle').addEventListener('click',()=>setSoundEnabled(!soundEnabled));
+    $('restartButton').addEventListener('click',()=>{playPageTurn();restartApp(true)});
+    $('coverCard').addEventListener('click',()=>{playPageTurn();showScreen('s1')});
+    $('startTime').addEventListener('click',()=>{
+      playMagicHint();showScreen('s2');cancelAnimationFrame(timelineRaf);$('arriveNow').style.display='none';const start=performance.now();
+      function run(now){
+        const progress=Math.min(1,(now-start)/4300),eased=1-Math.pow(1-progress,3),year=Math.round(1996+(2026-1996)*eased);$('yearCounter').textContent=year;
+        if(year<2008)$('timelineText').textContent='那时你还不知道，长大是一场不能提前阅读的魔法。';
+        else if(year<2014)$('timelineText').textContent='你开始拥有自己的秘密、选择，以及一些暂时没有答案的问题。';
+        else if(year<2018)$('timelineText').textContent='2014年9月1日，两条原本不同的路线开始相遇。';
+        else $('timelineText').textContent='时间列车即将抵达：第三十站。';
+        if(progress<1)timelineRaf=requestAnimationFrame(run);else{timelineRaf=null;$('arriveNow').style.display='block';playMagicHint()}
+      }
+      timelineRaf=requestAnimationFrame(run);
+    });
+    $('arriveNow').addEventListener('click',()=>{
+      playMagicHint();showScreen('s3');let shown=0;clearInterval(daysTimer);const step=Math.ceil(daysAlive/90);
+      daysTimer=setInterval(()=>{shown=Math.min(daysAlive,shown+step);$('daysAlive').textContent=shown.toLocaleString('zh-CN');if(shown===daysAlive){clearInterval(daysTimer);daysTimer=null}},18);
+    });
+    $('writeWish').addEventListener('click',()=>{playPageTurn();showScreen('s4')});
+    function goCake(){try{sessionStorage.setItem('sealedWish',$('wish').value.trim()||'[空白羊皮纸]')}catch(error){}showScreen('s5')}
+    $('sealWish').addEventListener('click',()=>{
+      if(!$('wish').value.trim()){toast('也可以选择一张空白羊皮纸。');playMagicHint();return}
+      playMagicHint();toast('愿望已经封印，任何人都无法查看。');clearTimeout(transitionTimer);transitionTimer=setTimeout(goCake,850);
+    });
+    $('skipWish').addEventListener('click',()=>{playPageTurn();toast('已替你保留一张空白羊皮纸。');clearTimeout(transitionTimer);transitionTimer=setTimeout(goCake,700)});
+
+    function beginHold(event){
+      if(blown)return;event.preventDefault();ensureAudio();holdStart=performance.now();
+      function tick(now){
+        const progress=Math.min(1,(now-holdStart)/1600);hold.style.setProperty('--progress',`${progress*100}%`);$('flame').style.transform=`translateX(-50%) rotate(${progress*20}deg) scale(${1-progress*.18})`;
+        if(progress>=1){blowOut();return}raf=requestAnimationFrame(tick);
+      }
+      raf=requestAnimationFrame(tick);
+    }
+    function endHold(){
+      if(blown)return;cancelAnimationFrame(raf);raf=null;hold.style.setProperty('--progress','0%');$('flame').style.transform='';
+      if(holdStart&&performance.now()-holdStart<1400)toast('再长按一会儿，魔法风还没有聚集完成。');holdStart=0;
+    }
+    function blowOut(){
+      blown=true;cancelAnimationFrame(raf);raf=null;playBlow();$('flame').classList.add('out');hold.style.setProperty('--progress','100%');$('blowHint').textContent='愿望已经离开这里，正在前往一个暂时无法确认的地方。';
+      if(navigator.vibrate)navigator.vibrate(80);clearTimeout(transitionTimer);transitionTimer=setTimeout(()=>{try{sessionStorage.removeItem('sealedWish')}catch(error){}showScreen('s6')},1900);
+    }
+    hold.addEventListener('pointerdown',beginHold);['pointerup','pointercancel','pointerleave'].forEach(eventName=>hold.addEventListener(eventName,endHold));
+    $('cake').addEventListener('click',()=>{cakeClicks++;if(cakeClicks===5){playMagicHint();toast('魔法厨房警告：再点下去，蛋糕将提前消失。');$('cake').animate([{transform:'scale(1)'},{transform:'scale(.9)'},{transform:'scale(1)'}],{duration:520});cakeClicks=0}});
+    $('starSecret').addEventListener('click',()=>{playPageTurn();$('letter').classList.add('show');$('claim').classList.add('show');$('starSecret').textContent='✉';if(navigator.vibrate)navigator.vibrate(45)});
+    $('claimCard').addEventListener('click',()=>{playCardReward();$('cardModal').classList.add('show')});
+    document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>$(button.dataset.close).classList.remove('show')));
+    document.querySelectorAll('.modal').forEach(modal=>modal.addEventListener('click',event=>{if(event.target===modal)modal.classList.remove('show')}));
+    $('corridorEgg').addEventListener('click',()=>{
+      const now=Date.now();corridor=corridor.filter(time=>now-time<5000);corridor.push(now);$('corridorEgg').classList.remove('pulse');void $('corridorEgg').offsetWidth;$('corridorEgg').classList.add('pulse');
+      if(corridor.length>=5){playMagicHint();$('corridorModal').classList.add('show');corridor=[];if(navigator.vibrate)navigator.vibrate([45,35,70])}
+    });
+    function ageTap(){
+      ageClicks++;clearTimeout(ageTimer);ageTimer=setTimeout(()=>ageClicks=0,1800);
+      if(ageClicks>=3){playMagicHint();$('permitModal').classList.add('show');ageClicks=0;if(navigator.vibrate)navigator.vibrate([35,25,60])}
+    }
+    $('ageEgg').addEventListener('click',ageTap);$('finalAgeEgg').addEventListener('click',ageTap);
+    window.addEventListener('pageshow',event=>{if(event.persisted)restartApp(false)});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden&&audioContext&&audioContext.state==='running')audioContext.suspend().catch(()=>{})});
+    if('scrollRestoration' in history)history.scrollRestoration='manual';
   </script>
 </body>
 </html>
